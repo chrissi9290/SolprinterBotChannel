@@ -2,11 +2,9 @@ import requests
 import time
 import threading
 
-# Neuer Bot-Token & Gruppen-ID
+# Bot-Token & Gruppen-ID
 BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
 CHAT_ID = '-1002397010517'  # Deine Gruppe SOLPRINTER PONZI
-
-bekannte_paare = set()
 
 def sende_telegram_nachricht(nachricht):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -17,33 +15,24 @@ def sende_telegram_nachricht(nachricht):
 # Testnachricht beim Start
 sende_telegram_nachricht("Bot wurde erfolgreich gestartet und läuft!")
 
-def checke_neue_coins():
-    global bekannte_paare
+def checke_coins_debug():
     while True:
         try:
-            print("Prüfe neue Coins...")
+            print("Prüfe Coins (Debug)...")
             response = requests.get("https://api.dexscreener.io/latest/dex/pairs")
             data = response.json()
-            neue_coins = []
 
-            for pair in data['pairs']:
-                pair_id = pair['pairAddress']
-                if pair_id not in bekannte_paare:
-                    bekannte_paare.add(pair_id)
-                    neue_coins.append(pair)
-
-            print(f"{len(neue_coins)} neue Coins gefunden")
-
-            for coin in neue_coins:
+            # Debug: Poste einfach die ersten 5 Coins!
+            for coin in data['pairs'][:5]:
                 symbol = coin['baseToken']['symbol']
                 quote = coin['quoteToken']['symbol']
                 price = round(float(coin['priceUsd']), 4)
                 pair_url = coin['url']
-                nachricht = f"Neuer Coin entdeckt:\n{symbol}/{quote} - ${price}\n{pair_url}"
+                nachricht = f"Test Coin:\n{symbol}/{quote} - ${price}\n{pair_url}"
                 sende_telegram_nachricht(nachricht)
 
         except Exception as e:
-            print(f"Fehler beim Check neuer Coins: {e}")
+            print(f"Fehler beim Debug-Check der Coins: {e}")
 
         time.sleep(600)  # 10 Minuten
 
@@ -73,8 +62,8 @@ def poste_top_10():
         time.sleep(3600)  # 60 Minuten
 
 # Starte Threads
-thread_neue_coins = threading.Thread(target=checke_neue_coins)
+thread_debug_coins = threading.Thread(target=checke_coins_debug)
 thread_top_10 = threading.Thread(target=poste_top_10)
 
-thread_neue_coins.start()
+thread_debug_coins.start()
 thread_top_10.start()
