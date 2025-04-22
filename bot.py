@@ -16,7 +16,7 @@ def sende_telegram_nachricht(nachricht):
 
 sende_telegram_nachricht("Raydium Bot gestartet!")
 
-# Raydium API schlank nutzen
+# Raydium Top Pools posten
 def checke_raydium_top_pools():
     while True:
         try:
@@ -24,8 +24,7 @@ def checke_raydium_top_pools():
             if response.status_code == 200:
                 data = response.json()
 
-                # Maximal 10 Pools verarbeiten, Memory sparen!
-                pools = list(data.values())[:10]
+                pools = list(data.values())[:10]  # Nur 10 Pools für wenig Speicher
 
                 nachricht = "🔥 Top Raydium Pools:\n"
                 for pool in pools:
@@ -42,8 +41,8 @@ def checke_raydium_top_pools():
         except Exception as e:
             sende_telegram_nachricht(f"Raydium Fehler: {e}")
 
-        time.sleep(1800)  # Alle 30 Minuten, damit Speicher nicht überläuft
+        time.sleep(1800)  # Alle 30 Minuten
 
-# Nur 1 Thread, schlank halten
+# Starte den schlanken Raydium-Thread
 thread_raydium_top = threading.Thread(target=checke_raydium_top_pools)
 thread_raydium_top.start()
