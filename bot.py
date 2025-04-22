@@ -14,15 +14,29 @@ def sende_telegram_nachricht(nachricht):
 
 sende_telegram_nachricht("Bot wurde erfolgreich gestartet und läuft!")
 
+# Hole Daten von Dexscreener
+def get_dexscreener_data(chain='solana'):
+    url = f"https://api.dexscreener.com/latest/dex/pairs/{chain}"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"HTTP Fehler: {response.status_code}")
+            sende_telegram_nachricht(f"Dexscreener HTTP Fehler: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"Fehler beim Abruf: {e}")
+        sende_telegram_nachricht(f"Fehler beim Abruf: {e}")
+        return None
+
+# Neue Coins prüfen
 def checke_neue_coins():
     while True:
-        try:
-            print("Prüfe neue Coins (Solana)...")
-            response = requests.get("https://api.dexscreener.com/latest/dex/pairs/solana")
-            data = response.json()
-
-            jetzt = int(time.time() * 1000)  # Aktuelle Zeit in ms
-            vor_30_min = jetzt - (30 * 60 * 1000)  # Coins der letzten 30 Minuten
+        data = get_dexscreener_data()
+        if data:
+            jetzt = int(time.time() * 1000)
+            vor_30_min = jetzt - (30 * 60 * 1000)
 
             neue_coins = [
                 pair for pair in data['pairs']
@@ -36,26 +50,20 @@ def checke_neue_coins():
                 price = round(float(coin['priceUsd']), 4)
                 pair_url = coin['url']
                 timestamp = datetime.datetime.fromtimestamp(coin['pairCreatedAt'] / 1000).strftime('%Y-%m-%d %H:%M')
-                nachricht = f"Neuer Coin:\n{symbol}/{quote} - ${price}\nListed: {timestamp}\n{pair_url}"
+                nachricht = f"🆕 Neuer Coin:\n{symbol}/{quote} - ${price}\nListed: {timestamp}\n{pair_url}"
                 sende_telegram_nachricht(nachricht)
 
-        except Exception as e:
-            print(f"Fehler neue Coins: {e}")
-            sende_telegram_nachricht(f"Fehler neue Coins: {e}")
+        time.sleep(600)
 
-        time.sleep(600)  # Alle 10 Minuten prüfen
-
+# Top Coins posten
 def poste_top_coins():
     while True:
-        try:
-            print("Poste Top 10 Coins nach Volumen...")
-            response = requests.get("https://api.dexscreener.com/latest/dex/pairs/solana")
-            data = response.json()
-
+        data = get_dexscreener_data()
+        if data:
             paare = sorted(data['pairs'], key=lambda x: float(x['volume']['h24Usd']), reverse=True)
             top_10 = paare[:10]
 
-            nachricht = "Top 10 Solana Coins (24h Volumen):\n"
+            nachricht = "🔥 Top 10 Solana Coins (24h Volumen):\n"
             for i, coin in enumerate(top_10, 1):
                 symbol = coin['baseToken']['symbol']
                 quote = coin['quoteToken']['symbol']
@@ -65,13 +73,9 @@ def poste_top_coins():
 
             sende_telegram_nachricht(nachricht)
 
-        except Exception as e:
-            print(f"Fehler Top Coins: {e}")
-            sende_telegram_nachricht(f"Fehler Top Coins: {e}")
+        time.sleep(3600)
 
-        time.sleep(3600)  # Alle 60 Minuten
-
-# Starte beide Tasks
+# Threads starten
 thread_neue_coins = threading.Thread(target=checke_neue_coins)
 thread_top_coins = threading.Thread(target=poste_top_coins)
 
