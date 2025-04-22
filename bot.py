@@ -2,8 +2,9 @@ import requests
 import time
 import threading
 
+# Neuer Bot-Token & Gruppen-ID
 BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
-CHAT_ID = '@solprinterponzi'  # Direkt @channelname!
+CHAT_ID = '-1002397010517'  # Deine Gruppe SOLPRINTER PONZI
 
 bekannte_paare = set()
 
