@@ -2,7 +2,7 @@ import requests
 import time
 import threading
 
-BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
+BOT_TOKEN = '7847896351:AAGYW8nYv9Cq8oWYQ75YBPiKPuqWgN4_rC0'
 CHAT_ID = '@solprinterponzi'  # Direkt @channelname!
 
 bekannte_paare = set()
@@ -10,12 +10,17 @@ bekannte_paare = set()
 def sende_telegram_nachricht(nachricht):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {'chat_id': CHAT_ID, 'text': nachricht}
-    requests.post(url, data=payload)
+    response = requests.post(url, data=payload)
+    print(f"Telegram Response: {response.status_code}, {response.text}")
+
+# Testnachricht beim Start
+sende_telegram_nachricht("Bot wurde erfolgreich gestartet und läuft!")
 
 def checke_neue_coins():
     global bekannte_paare
     while True:
         try:
+            print("Prüfe neue Coins...")
             response = requests.get("https://api.dexscreener.io/latest/dex/pairs")
             data = response.json()
             neue_coins = []
@@ -25,6 +30,8 @@ def checke_neue_coins():
                 if pair_id not in bekannte_paare:
                     bekannte_paare.add(pair_id)
                     neue_coins.append(pair)
+
+            print(f"{len(neue_coins)} neue Coins gefunden")
 
             for coin in neue_coins:
                 symbol = coin['baseToken']['symbol']
@@ -37,11 +44,12 @@ def checke_neue_coins():
         except Exception as e:
             print(f"Fehler beim Check neuer Coins: {e}")
 
-        time.sleep(600)  # 10 Minuten warten
+        time.sleep(600)  # 10 Minuten
 
 def poste_top_10():
     while True:
         try:
+            print("Poste Top 10 Coins...")
             response = requests.get("https://api.dexscreener.io/latest/dex/pairs")
             data = response.json()
 
@@ -61,8 +69,9 @@ def poste_top_10():
         except Exception as e:
             print(f"Fehler beim Posten der Top 10: {e}")
 
-        time.sleep(3600)  # 60 Minuten warten
+        time.sleep(3600)  # 60 Minuten
 
+# Starte Threads
 thread_neue_coins = threading.Thread(target=checke_neue_coins)
 thread_top_10 = threading.Thread(target=poste_top_10)
 
