@@ -18,11 +18,25 @@ def checke_coins_debug():
         try:
             print("Prüfe Coins (Debug)...")
             response = requests.get("https://api.dexscreener.io/latest/dex/pairs")
+
+            if response.status_code != 200:
+                fehler = f"Dexscreener HTTP Fehler: {response.status_code}"
+                print(fehler)
+                sende_telegram_nachricht(fehler)
+                time.sleep(600)
+                continue
+
+            if not response.text:
+                fehler = "Dexscreener gab eine leere Antwort zurück."
+                print(fehler)
+                sende_telegram_nachricht(fehler)
+                time.sleep(600)
+                continue
+
             data = response.json()
 
             anzahl_paare = len(data['pairs'])
             print(f"Dexscreener liefert {anzahl_paare} Paare")
-
             sende_telegram_nachricht(f"Dexscreener liefert {anzahl_paare} Paare")
 
             for coin in data['pairs'][:5]:
@@ -39,7 +53,6 @@ def checke_coins_debug():
 
         time.sleep(600)  # 10 Minuten
 
-# Nur Debug-Thread für jetzt!
+# Starte Debug-Thread
 thread_debug_coins = threading.Thread(target=checke_coins_debug)
-
 thread_debug_coins.start()
