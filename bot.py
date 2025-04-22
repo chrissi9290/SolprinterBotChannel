@@ -17,6 +17,7 @@ def checke_coins_debug():
     while True:
         try:
             print("Prüfe Coins (Debug)...")
+            # Laut offizieller API: .com verwenden!
             response = requests.get("https://api.dexscreener.com/latest/dex/pairs/solana")
 
             if response.status_code != 200:
@@ -29,7 +30,7 @@ def checke_coins_debug():
             data = response.json()
 
             anzahl_paare = len(data['pairs'])
-            print(f"Dexscreener liefert {anzahl_paare} Paare")
+            print(f"Dexscreener liefert {anzahl_paare} Solana-Paare")
             sende_telegram_nachricht(f"Dexscreener liefert {anzahl_paare} Solana-Paare")
 
             for coin in data['pairs'][:5]:
