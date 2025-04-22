@@ -2,7 +2,7 @@ import requests
 import time
 import threading
 
-BOT_TOKEN = '7847896351:AAGYW8nYv9Cq8oWYQ75YBPiKPuqWgN4_rC0'
+BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
 CHAT_ID = '@solprinterponzi'  # Direkt @channelname!
 
 bekannte_paare = set()
