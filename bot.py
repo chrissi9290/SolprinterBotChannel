@@ -17,17 +17,10 @@ def checke_coins_debug():
     while True:
         try:
             print("Prüfe Coins (Debug)...")
-            response = requests.get("https://api.dexscreener.io/latest/dex/pairs")
+            response = requests.get("https://api.dexscreener.com/latest/dex/pairs/solana")
 
             if response.status_code != 200:
                 fehler = f"Dexscreener HTTP Fehler: {response.status_code}"
-                print(fehler)
-                sende_telegram_nachricht(fehler)
-                time.sleep(600)
-                continue
-
-            if not response.text:
-                fehler = "Dexscreener gab eine leere Antwort zurück."
                 print(fehler)
                 sende_telegram_nachricht(fehler)
                 time.sleep(600)
@@ -37,7 +30,7 @@ def checke_coins_debug():
 
             anzahl_paare = len(data['pairs'])
             print(f"Dexscreener liefert {anzahl_paare} Paare")
-            sende_telegram_nachricht(f"Dexscreener liefert {anzahl_paare} Paare")
+            sende_telegram_nachricht(f"Dexscreener liefert {anzahl_paare} Solana-Paare")
 
             for coin in data['pairs'][:5]:
                 symbol = coin['baseToken']['symbol']
