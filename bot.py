@@ -1,7 +1,6 @@
 import requests
 from datetime import datetime
 
-# Telegram Bot Config
 BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
 CHAT_ID = '-1002397010517'
 
@@ -16,6 +15,12 @@ def hole_neue_tokens():
         print(f"Fehler bei API Anfrage: {e}")
         return []
 
+def is_valid_number(value):
+    try:
+        return value is not None and float(value) > 0
+    except:
+        return False
+
 def filter_tokens(tokens):
     gefiltert = []
     jetzt = datetime.utcnow()
@@ -23,14 +28,15 @@ def filter_tokens(tokens):
         try:
             erstellt = datetime.utcfromtimestamp(int(token['created_at']))
             alter_minuten = int((jetzt - erstellt).total_seconds() / 60)
-            preis = float(token.get('price', 0))
-            liquidity = float(token.get('liquidity', 0))
-            if alter_minuten <= 120 and preis > 0 and liquidity >= 1000:
+            preis = token.get('price')
+            liquidity = token.get('liquidity')
+
+            if alter_minuten <= 120 and is_valid_number(preis) and is_valid_number(liquidity) and float(liquidity) >= 1000:
                 token['alter_minuten'] = alter_minuten
                 gefiltert.append(token)
         except Exception as e:
             print(f"Fehler beim Filtern: {e}")
-    return gefiltert[:5]  # Maximal 5 Tokens
+    return gefiltert[:5]
 
 def sende_telegram_nachricht(nachricht):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -44,14 +50,14 @@ def main():
     print("Hole neue Tokens...")
     tokens = hole_neue_tokens()
     neue_tokens = filter_tokens(tokens)
-    print(f"Gefundene neue Tokens mit Preis & Liquidity: {len(neue_tokens)}")
+    print(f"Gefundene neue Tokens mit Preis & Liquidity ≥ 1000$: {len(neue_tokens)}")
 
     for token in neue_tokens:
         preis = round(float(token.get('price', 0)), 6)
         market_cap = token.get('market_cap')
-        liquidity = token.get('liquidity')
-        market_cap_display = f"${round(float(market_cap), 2)}" if market_cap else "n/a"
-        liquidity_display = f"${round(float(liquidity), 2)}" if liquidity else "n/a"
+        liquidity = round(float(token.get('liquidity', 0)), 2)
+        market_cap_display = f"${round(float(market_cap), 2)}" if is_valid_number(market_cap) else "n/a"
+        liquidity_display = f"${liquidity}" if liquidity else "n/a"
         alter = token.get('alter_minuten', '?')
         mint = token.get('mint', '?')
         chart_link = f"https://birdeye.so/token/{mint}?chain=solana"
