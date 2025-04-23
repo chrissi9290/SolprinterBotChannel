@@ -1,31 +1,31 @@
-import requests
+import time
 
-# Funktion zum Preis-Abruf via CoinMarketCap
-def get_cmc_prices(symbols):
-    CMC_API_KEY = '99028e78-8d31-4988-82f6-7d625fcb7304'
-    url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest'
-    parameters = {
-        'symbol': ','.join(symbols),
-        'convert': 'USD'
-    }
-    headers = {
-        'Accepts': 'application/json',
-        'X-CMC_PRO_API_KEY': CMC_API_KEY,
-    }
-    session = requests.Session()
-    session.headers.update(headers)
-    try:
-        response = session.get(url, params=parameters, timeout=10)
-        if response.status_code == 200:
-            data = response.json().get('data', {})
-            return {symbol: round(data[symbol]['quote']['USD']['price'], 6) for symbol in data}
-    except Exception as e:
-        print(f"CMC Fehler: {e}")
-    return {}
+# Funktion: Ist Token frisch?
+def ist_token_neu(created_at_timestamp, limit_minuten=60):
+    jetzt = int(time.time())
+    alter = jetzt - int(created_at_timestamp)
+    return alter <= limit_minuten * 60
 
-# Jetzt testen mit bekannten Symbolen
-test_symbols = ['SOL', 'BTC', 'USDC']
-prices = get_cmc_prices(test_symbols)
+# Haupt-Loop: Nur neue Tokens mit Preis
+for token in tokens:
+    created_at = token.get('created_at', 0)
+    if not ist_token_neu(created_at):
+        continue  # Zu alt → skippen
 
-for symbol in test_symbols:
-    print(f"{symbol}: ${prices.get(symbol, 'n/a')}")
+    name = token.get('name', '???')
+    symbol = token.get('symbol', '???').upper()
+    address = token.get('mint', '???')
+    decimals = token.get('decimals', '???')
+    preis = prices.get(symbol)
+
+    if preis is None or preis == 'n/a':
+        continue  # Kein Preis → skippen
+
+    nachricht = (
+        f"🆕 Frisch gelistet auf Jupiter:\n"
+        f"{name} ({symbol})\n"
+        f"Address: {address}\n"
+        f"Decimals: {decimals}\n"
+        f"Preis: ${preis}"
+    )
+    sende_telegram_nachricht(nachricht)
