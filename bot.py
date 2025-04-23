@@ -3,7 +3,7 @@ import time
 
 BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
 CHAT_ID = '-1002397010517'
-BIRDEYE_API_KEY = '1c68ac943a2a423d91e73f1617b8ddf5'
+BIRDEYE_API_KEY = 'bb5b2f48c9154f69a85c46fa08c83b38'
 
 def sende_telegram_nachricht(nachricht):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -32,7 +32,7 @@ while True:
                 liquidity = round(float(token.get('liquidity', 0)), 2)
                 source = token.get('source', '???').capitalize()
                 listed_at = token.get('liquidityAddedAt', 'N/A')
-                nachricht = f"🆕 **Neues Listing:**\n{name} ({symbol})\nDEX: {source}\nLiquidity: ${liquidity}\nGelisted am: {listed_at}"
+                nachricht = f"🆕 Neues Listing:\n{name} ({symbol})\nDEX: {source}\nLiquidity: ${liquidity}\nGelisted am: {listed_at}"
                 sende_telegram_nachricht(nachricht)
 
         else:
