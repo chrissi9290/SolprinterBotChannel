@@ -32,7 +32,13 @@ while True:
                 liquidity = round(float(token.get('liquidity', 0)), 2)
                 source = token.get('source', '???').capitalize()
                 listed_at = token.get('liquidityAddedAt', 'N/A')
-                nachricht = f"🆕 Neues Listing:\n{name} ({symbol})\nDEX: {source}\nLiquidity: ${liquidity}\nGelisted am: {listed_at}"
+                nachricht = (
+                    f"🆕 Neues Listing:\n"
+                    f"Name: {name} ({symbol})\n"
+                    f"DEX: {source}\n"
+                    f"Liquidity: ${liquidity}\n"
+                    f"Gelistet am: {listed_at}"
+                )
                 sende_telegram_nachricht(nachricht)
 
         else:
