@@ -1,6 +1,5 @@
 import requests
 import time
-import json
 
 # === Telegram Einstellungen ===
 BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
@@ -9,10 +8,14 @@ CHAT_ID = '-1002397010517'
 # === CoinMarketCap API ===
 CMC_API_KEY = '99028e78-8d31-4988-82f6-7d625fcb7304'
 
-# === Telegram Funktion ===
+# === Telegram Funktion (mit Markdown Links) ===
 def sende_telegram_nachricht(nachricht):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {'chat_id': CHAT_ID, 'text': nachricht}
+    payload = {
+        'chat_id': CHAT_ID,
+        'text': nachricht,
+        'parse_mode': 'Markdown'
+    }
     try:
         requests.post(url, data=payload, timeout=10)
     except requests.exceptions.RequestException as e:
@@ -63,11 +66,13 @@ while True:
                     continue  # Kein Preis → skippen
 
                 nachricht = (
-                    f"🆕 Frisch gelistet auf Jupiter:\n"
-                    f"{name} ({symbol})\n"
-                    f"Address: {address}\n"
-                    f"Decimals: {decimals}\n"
-                    f"Preis: ${preis}"
+                    f"🆕 *Frisch gelistet auf Jupiter:*\n"
+                    f"*{name}* ({symbol})\n"
+                    f"*Address:* `{address}`\n"
+                    f"*Decimals:* {decimals}\n"
+                    f"*Preis:* ${preis}\n\n"
+                    f"[➡️ Swap bei Jupiter](https://jup.ag/swap/SOL-{address})\n"
+                    f"[📈 Chart ansehen](https://birdeye.so/token/{address}?chain=solana)"
                 )
                 sende_telegram_nachricht(nachricht)
         else:
