@@ -18,7 +18,7 @@ while True:
         response = requests.get("https://public-api.birdeye.so/public/latest-pairs", headers=headers)
         if response.status_code == 200:
             data = response.json()
-            pairs = data.get('data', [])[:5]  # Nur die neuesten 5 Paare
+            pairs = data.get('data', [])[:5]
 
             for pair in pairs:
                 base = pair.get('baseTokenSymbol')
