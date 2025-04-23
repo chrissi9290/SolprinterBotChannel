@@ -10,11 +10,11 @@ def sende_telegram_nachricht(nachricht):
     payload = {'chat_id': CHAT_ID, 'text': nachricht}
     requests.post(url, data=payload)
 
-sende_telegram_nachricht("Birdeye Top Tokens Bot gestartet!")
+sende_telegram_nachricht("Birdeye Neue Listings Bot gestartet!")
 
 while True:
     try:
-        url = "https://public-api.birdeye.so/defi/tokenlist?sort_by=v24hUSD&sort_type=desc&offset=0&limit=10&min_liquidity=100"
+        url = "https://public-api.birdeye.so/defi/v2/tokens/new_listing?limit=5&meme_platform_enabled=true"
         headers = {
             "accept": "application/json",
             "x-chain": "solana",
@@ -24,17 +24,16 @@ while True:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             data = response.json()
-            tokens = data.get('data', [])[:10]
+            tokens = data.get('data', [])
 
-            nachricht = "🔥 Top 10 Solana Tokens (24h Volumen):\n"
-            for i, token in enumerate(tokens, 1):
+            for token in tokens:
                 symbol = token.get('symbol', '???')
+                name = token.get('name', '')
                 price = round(float(token.get('priceUsd', 0)), 6)
-                vol = round(float(token.get('v24hUSD', 0)), 2)
-                liquidity = round(float(token.get('liquidity', 0)), 2)
-                nachricht += f"{i}. {symbol} - ${price} | Vol: ${vol} | LQ: ${liquidity}\n"
-
-            sende_telegram_nachricht(nachricht)
+                market_cap = round(float(token.get('marketCapUsd', 0)), 2)
+                listing_time = token.get('createdTime', 'N/A')
+                nachricht = f"🆕 Neues Listing:\n{name} ({symbol})\nPreis: ${price}\nMC: ${market_cap}\nGelistet: {listing_time}"
+                sende_telegram_nachricht(nachricht)
 
         else:
             sende_telegram_nachricht(f"Birdeye Fehler: HTTP {response.status_code}")
@@ -42,4 +41,4 @@ while True:
     except Exception as e:
         sende_telegram_nachricht(f"Fehler: {e}")
 
-    time.sleep(3600)  # alle 60 Minuten posten
+    time.sleep(900)  # alle 15 Minuten neue Listings checken
