@@ -23,12 +23,14 @@ def filter_tokens(tokens):
         try:
             erstellt = datetime.utcfromtimestamp(int(token['created_at']))
             alter_minuten = int((jetzt - erstellt).total_seconds() / 60)
-            if alter_minuten <= 120:  # Nur wenn max. 2h alt
+            preis = float(token.get('price', 0))
+            liquidity = float(token.get('liquidity', 0))
+            if alter_minuten <= 120 and preis > 0 and liquidity >= 1000:
                 token['alter_minuten'] = alter_minuten
                 gefiltert.append(token)
         except Exception as e:
             print(f"Fehler beim Filtern: {e}")
-    return gefiltert[:5]  # Nur max. 5 Tokens posten
+    return gefiltert[:5]  # Maximal 5 Tokens
 
 def sende_telegram_nachricht(nachricht):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -42,12 +44,12 @@ def main():
     print("Hole neue Tokens...")
     tokens = hole_neue_tokens()
     neue_tokens = filter_tokens(tokens)
-    print(f"Gefundene neue Tokens: {len(neue_tokens)}")
+    print(f"Gefundene neue Tokens mit Preis & Liquidity: {len(neue_tokens)}")
 
     for token in neue_tokens:
-        preis = token.get('price', 'n/a')
-        market_cap = token.get('market_cap', 'n/a')
-        liquidity = token.get('liquidity', 'n/a')
+        preis = round(float(token.get('price', 0)), 6)
+        market_cap = round(float(token.get('market_cap', 0)), 2)
+        liquidity = round(float(token.get('liquidity', 0)), 2)
         alter = token.get('alter_minuten', '?')
         mint = token.get('mint', '?')
         chart_link = f"https://birdeye.so/token/{mint}?chain=solana"
