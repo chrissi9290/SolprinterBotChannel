@@ -16,7 +16,7 @@ while True:
         response = requests.get("https://lite-api.jup.ag/tokens/v1/new")
         if response.status_code == 200:
             data = response.json()
-            tokens = data.get('tokens', [])[:5]  # nur die neuesten 5 Tokens
+            tokens = data[:5]  # Direkt die Liste nehmen
 
             for token in tokens:
                 name = token.get('name', '???')
