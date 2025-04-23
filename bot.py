@@ -1,21 +1,18 @@
 import requests
 import time
 
-# === Telegram Einstellungen ===
+# === Telegram Settings ===
 BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
 CHAT_ID = '-1002397010517'
 CMC_API_KEY = '99028e78-8d31-4988-82f6-7d625fcb7304'
 
-gepostete_tokens = set()
-erste_runde = True  # Alle Tokens einmal posten
-
-def sende_telegram_nachricht(nachricht):
+def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {'chat_id': CHAT_ID, 'text': nachricht, 'parse_mode': 'Markdown'}
+    payload = {'chat_id': CHAT_ID, 'text': message, 'parse_mode': 'Markdown'}
     try:
         requests.post(url, data=payload, timeout=10)
     except Exception as e:
-        print(f"Telegram Fehler: {e}")
+        print(f"Telegram Error: {e}")
 
 def get_cmc_prices(symbols):
     if not symbols:
@@ -28,13 +25,13 @@ def get_cmc_prices(symbols):
         data = response.json().get('data', {})
         return {symbol: round(data[symbol]['quote']['USD']['price'], 6) for symbol in data}
     except Exception as e:
-        print(f"CMC Fehler: {e}")
+        print(f"CMC Error: {e}")
     return {}
 
-def ist_token_neu(created_at_timestamp, limit_minuten=60):
-    jetzt = int(time.time())
-    alter = jetzt - int(created_at_timestamp)
-    return alter <= limit_minuten * 60
+def is_token_new(created_at_timestamp, limit_minutes=60):
+    now = int(time.time())
+    age = now - int(created_at_timestamp)
+    return age <= limit_minutes * 60
 
 while True:
     try:
@@ -52,37 +49,28 @@ while True:
                 name = token.get('name', '???')
                 symbol = token.get('symbol', '???').upper()
                 decimals = token.get('decimals', '???')
-                preis = prices.get(symbol)
+                price = prices.get(symbol)
 
-                if not ist_token_neu(created_at):
-                    continue  # Zu alt → skippen
+                if not is_token_new(created_at):
+                    continue  # Too old → skip
+                if price is None or price == 'n/a':
+                    continue  # No price → skip
 
-                if preis is None or preis == 'n/a':
-                    continue  # Kein Preis → skippen
-
-                if not erste_runde and address in gepostete_tokens:
-                    continue  # Bereits gepostet → skippen
-
-                nachricht = (
-                    f"🆕 *Frisch gelistet auf Jupiter:*\n"
+                message = (
+                    f"🆕 *New Token Listed on Jupiter:*\n"
                     f"*{name}* ({symbol})\n"
                     f"*Address:* `{address}`\n"
                     f"*Decimals:* {decimals}\n"
-                    f"*Preis:* ${preis}\n\n"
-                    f"[➡️ Swap bei Jupiter](https://jup.ag/swap/SOL-{address})\n"
-                    f"[📈 Chart ansehen](https://birdeye.so/token/{address}?chain=solana)"
+                    f"*Price:* ${price}\n\n"
+                    f"[➡️ Swap on Jupiter](https://jup.ag/swap/SOL-{address})\n"
+                    f"[📈 View Chart](https://birdeye.so/token/{address}?chain=solana)"
                 )
-                sende_telegram_nachricht(nachricht)
-                gepostete_tokens.add(address)
-
-            if erste_runde:
-                print("Einmaliger Full-Post abgeschlossen!")
-                erste_runde = False  # Ab jetzt nur noch neue Tokens
+                send_telegram_message(message)
 
         else:
-            sende_telegram_nachricht(f"Jupiter Fehler: HTTP {response.status_code}")
+            send_telegram_message(f"Jupiter Error: HTTP {response.status_code}")
 
     except Exception as e:
-        sende_telegram_nachricht(f"Fehler: {e}")
+        send_telegram_message(f"Error: {e}")
 
-    time.sleep(900)  # 15 Minuten Pause
+    time.sleep(3600)  # 60 minutes pause
