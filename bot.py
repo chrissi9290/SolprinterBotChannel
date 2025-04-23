@@ -21,7 +21,7 @@ while True:
             for token in tokens:
                 name = token.get('name', '???')
                 symbol = token.get('symbol', '???')
-                address = token.get('address', '???')
+                address = token.get('address') or token.get('mintAddress', '???')
                 decimals = token.get('decimals', '???')
 
                 nachricht = (
