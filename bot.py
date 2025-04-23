@@ -21,14 +21,20 @@ while True:
             for token in tokens:
                 name = token.get('name', '???')
                 symbol = token.get('symbol', '???')
-                address = token.get('address') or token.get('mintAddress', '???')
+                address = token.get('mintAddress', '???')
                 decimals = token.get('decimals', '???')
+                price = round(float(token.get('price', 0)), 6)
+                marketcap = round(float(token.get('marketCap', 0)), 2)
+                liquidity = round(float(token.get('liquidity', 0)), 2)
 
                 nachricht = (
                     f"🆕 Neues Token auf Jupiter:\n"
                     f"{name} ({symbol})\n"
                     f"Address: {address}\n"
-                    f"Decimals: {decimals}"
+                    f"Decimals: {decimals}\n"
+                    f"Preis: ${price}\n"
+                    f"MarketCap: ${marketcap}\n"
+                    f"Liquidity: ${liquidity}"
                 )
                 sende_telegram_nachricht(nachricht)
 
