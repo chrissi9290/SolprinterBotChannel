@@ -1,100 +1,89 @@
 import requests
 import time
-from datetime import datetime, timezone, timedelta
-
+from datetime import datetime, timedelta
 
 BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
 CHAT_ID = '-1002397010517'
 
 def sende_telegram_nachricht(nachricht):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": CHAT_ID,
-        "text": nachricht,
-        "parse_mode": "Markdown"
-    }
+    payload = {"chat_id": CHAT_ID, "text": nachricht, "parse_mode": "HTML"}
     requests.post(url, data=payload)
 
-def get_new_tokens():
+def hole_tokens():
     url = "https://lite-api.jup.ag/tokens/v1/new"
     response = requests.get(url)
+    return response.json()
+
+def hole_preise(token_ids):
+    url = f"https://price.jup.ag/v4/price?ids={','.join(token_ids)}"
+    response = requests.get(url)
     if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Fehler API: {response.status_code}")
-        return []
-
-def get_prices_from_jupiter(mint_addresses):
-    url = "https://price.jup.ag/v4/price"
-    params = {"ids": ",".join(mint_addresses)}
-    try:
-        response = requests.get(url, params=params)
-        if response.status_code == 200:
-            data = response.json()
-            prices = {}
-            for mint, info in data.get("data", {}).items():
-                prices[mint] = info.get("price", None)
-            return prices
-        else:
-            print(f"Fehler Preisabfrage: {response.status_code}")
-            return {}
-    except Exception as e:
-        print(f"Fehler: {e}")
-        return {}
-
-def filter_tokens(tokens):
-    jetzt = datetime.now(timezone.utc)
-    gefiltert = []
-    for token in tokens:
-        created = datetime.fromtimestamp(token['created_at'], timezone.utc)
-        alter = (jetzt - created).total_seconds() / 60  # in Minuten
-        if alter <= 120:  # Maximal 2h alt
-            gefiltert.append(token)
-    return gefiltert[:10]  # Maximal 10 Tokens für Preisabfrage
+        return response.json().get("data", {})
+    return {}
 
 def main():
-    while True:
-        print("Hole neue Tokens...")
-        tokens = get_new_tokens()
-        tokens = filter_tokens(tokens)
+    try:
+        sende_telegram_nachricht("🔥 Jupiter Token Bot läuft! 🔥")
+        tokens_data = hole_tokens()
+        now = datetime.utcnow()
+        gefilterte_tokens = []
 
-        if not tokens:
-            print("Keine passenden Tokens gefunden.")
-            time.sleep(3600)
-            continue
+        for token in tokens_data:
+            created_at = datetime.utcfromtimestamp(token['created_at'])
+            alter = (now - created_at).total_seconds() / 60  # Alter in Minuten
 
-        mints = [t['mint'] for t in tokens]
-        preise = get_prices_from_jupiter(mints)
+            if alter <= 120:  # Nur Tokens max. 2 Stunden alt
+                gefilterte_tokens.append(token)
 
-        gesendet = 0
-        for token in tokens:
+        if not gefilterte_tokens:
+            sende_telegram_nachricht("Keine neuen Tokens gefunden.")
+            return
+
+        token_ids = [t['mint'] for t in gefilterte_tokens]
+        preise_data = hole_preise(token_ids)
+
+        nachrichten = []
+        for token in gefilterte_tokens[:5]:  # max 5 Tokens
             mint = token['mint']
-            preis = preise.get(mint, None)
-            if preis is None or preis == 0:
-                continue  # Nur Tokens mit Preis
-
             name = token['name']
             symbol = token['symbol']
             decimals = token['decimals']
-            age_min = int((datetime.now(timezone.utc) - datetime.fromtimestamp(token['created_at'], timezone.utc)).total_seconds() / 60)
+            preis_info = preise_data.get(mint)
 
+            if not preis_info:
+                continue
+
+            preis = preis_info.get('price', 0)
+            liquiditaet = preis_info.get('liquidity', 0)
+            if preis <= 0 or liquiditaet < 1000:
+                continue
+
+            alter_minuten = int((now - datetime.utcfromtimestamp(token['created_at'])).total_seconds() / 60)
             chart_link = f"https://dexscreener.com/solana/{mint}"
-            swap_link = f"https://jup.ag/swap/SOL-{mint}"
+            swap_link = f"https://jup.ag/swap?outputCurrency={mint}"
 
-            nachricht = f"""🆕 *Neues Token auf Jupiter:*
-*{name}* ({symbol})
-*Address:* `{mint}`
-*Decimals:* {decimals}
-*Preis:* ${preis:.6f}
-*Alter:* {age_min} Min.
-[📈 Chart]({chart_link}) | [🔄 Swap]({swap_link})"""
+            nachricht = (
+                f"🆕 <b>Neues Token auf Jupiter:</b>\n"
+                f"<b>{name}</b> ({symbol})\n"
+                f"Address: <code>{mint}</code>\n"
+                f"Decimals: {decimals}\n"
+                f"Preis: ${preis:.4f}\n"
+                f"Liquidity: ${liquiditaet:.2f}\n"
+                f"Alter: {alter_minuten} Min.\n"
+                f"📈 <a href='{chart_link}'>Chart</a> | 🔄 <a href='{swap_link}'>Swap</a>"
+            )
+            nachrichten.append(nachricht)
 
-            sende_telegram_nachricht(nachricht)
-            gesendet += 1
-            if gesendet >= 5:
-                break
+        if nachrichten:
+            for msg in nachrichten:
+                sende_telegram_nachricht(msg)
+        else:
+            sende_telegram_nachricht("Keine Tokens mit Preis & Liquidität gefunden.")
+    except Exception as e:
+        sende_telegram_nachricht(f"Fehler: {e}")
 
-        time.sleep(3600)  # Alle 60 Minuten ausführen
-
-if __name__ == "__main__":
+# Alle 60 Minuten ausführen
+while True:
     main()
+    time.sleep(3600)  # 60 Minuten warten
