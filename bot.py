@@ -10,24 +10,24 @@ def sende_telegram_nachricht(nachricht):
     payload = {'chat_id': CHAT_ID, 'text': nachricht}
     requests.post(url, data=payload)
 
-sende_telegram_nachricht("Birdeye Solana Bot gestartet!")
+sende_telegram_nachricht("Birdeye Token Bot gestartet!")
 
 while True:
     try:
         headers = {'X-API-KEY': BIRDEYE_API_KEY}
-        response = requests.get("https://public-api.birdeye.so/public/latest-pairs", headers=headers)
+        response = requests.get("https://public-api.birdeye.so/public/tokenlist", headers=headers)
         if response.status_code == 200:
             data = response.json()
-            pairs = data.get('data', [])[:5]
+            tokens = data.get('data', [])[:5]  # Nur die ersten 5 Tokens
 
-            for pair in pairs:
-                base = pair.get('baseTokenSymbol')
-                quote = pair.get('quoteTokenSymbol')
-                price = round(float(pair.get('priceUsd', 0)), 4)
-                dex = pair.get('dexName')
-                link = pair.get('txUrl', '')
-                nachricht = f"🆕 Neuer Solana Coin:\n{base}/{quote} - ${price} auf {dex}\n{link}"
-                sende_telegram_nachricht(nachricht)
+            nachricht = "🔥 Birdeye Tokens:\n"
+            for token in tokens:
+                name = token.get('name', 'Unbekannt')
+                symbol = token.get('symbol', '')
+                price = round(float(token.get('priceUsd', 0)), 4)
+                nachricht += f"{name} ({symbol}) - ${price}\n"
+
+            sende_telegram_nachricht(nachricht)
 
         else:
             sende_telegram_nachricht(f"Birdeye Fehler: HTTP {response.status_code}")
