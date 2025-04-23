@@ -1,8 +1,11 @@
 import requests
 import time
+import json
 
 BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
 CHAT_ID = '-1002397010517'
+
+CMC_API_KEY = '99028e78-8d31-4988-82f6-7d625fcb7304'
 
 def sende_telegram_nachricht(nachricht):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -12,20 +15,28 @@ def sende_telegram_nachricht(nachricht):
     except requests.exceptions.RequestException as e:
         print(f"Telegram Fehler: {e}")
 
-def get_prices_with_retry(mint_addresses, retries=3, delay=5):
-    price_url = f"https://price.jup.ag/v4/price?ids={','.join(mint_addresses)}"
-    for attempt in range(retries):
-        try:
-            price_response = requests.get(price_url, timeout=10)
-            if price_response.status_code == 200:
-                prices_data = price_response.json().get('data', {})
-                return {mint: round(info.get('price', 0), 6) for mint, info in prices_data.items()}
-        except requests.exceptions.RequestException as e:
-            print(f"Preis-Request Fehler: {e}")
-            time.sleep(delay)
+def get_cmc_prices(symbols):
+    url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest'
+    parameters = {
+        'symbol': ','.join(symbols),
+        'convert': 'USD'
+    }
+    headers = {
+        'Accepts': 'application/json',
+        'X-CMC_PRO_API_KEY': CMC_API_KEY,
+    }
+    session = requests.Session()
+    session.headers.update(headers)
+    try:
+        response = session.get(url, params=parameters, timeout=10)
+        if response.status_code == 200:
+            data = response.json().get('data', {})
+            return {symbol: round(data[symbol]['quote']['USD']['price'], 6) for symbol in data}
+    except Exception as e:
+        print(f"CMC Fehler: {e}")
     return {}
 
-sende_telegram_nachricht("🔥 Jupiter New Token Bot gestartet!")
+sende_telegram_nachricht("🔥 Jupiter Bot mit CoinMarketCap Preise gestartet!")
 
 while True:
     try:
@@ -34,16 +45,15 @@ while True:
             data = response.json()
             tokens = data[:5]
 
-            mint_addresses = [token.get('mint', '') for token in tokens]
-
-            prices = get_prices_with_retry(mint_addresses)
+            symbols = [token.get('symbol', '').upper() for token in tokens if token.get('symbol')]
+            prices = get_cmc_prices(symbols)
 
             for token in tokens:
                 name = token.get('name', '???')
-                symbol = token.get('symbol', '???')
+                symbol = token.get('symbol', '???').upper()
                 address = token.get('mint', '???')
                 decimals = token.get('decimals', '???')
-                preis = prices.get(address, 'n/a')
+                preis = prices.get(symbol, 'n/a')
 
                 nachricht = (
                     f"🆕 Neues Token auf Jupiter:\n"
