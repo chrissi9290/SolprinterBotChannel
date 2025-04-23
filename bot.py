@@ -10,7 +10,7 @@ def sende_telegram_nachricht(nachricht):
     payload = {'chat_id': CHAT_ID, 'text': nachricht}
     requests.post(url, data=payload)
 
-sende_telegram_nachricht("Birdeye Neue Listings Bot gestartet!")
+sende_telegram_nachricht("🔥 Birdeye Neue Listings Bot gestartet!")
 
 while True:
     try:
@@ -24,15 +24,15 @@ while True:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             data = response.json()
-            tokens = data.get('data', [])
+            tokens = data.get('data', {}).get('items', [])
 
             for token in tokens:
                 symbol = token.get('symbol', '???')
                 name = token.get('name', '')
-                price = round(float(token.get('priceUsd', 0)), 6)
-                market_cap = round(float(token.get('marketCapUsd', 0)), 2)
-                listing_time = token.get('createdTime', 'N/A')
-                nachricht = f"🆕 Neues Listing:\n{name} ({symbol})\nPreis: ${price}\nMC: ${market_cap}\nGelistet: {listing_time}"
+                liquidity = round(float(token.get('liquidity', 0)), 2)
+                source = token.get('source', '???').capitalize()
+                listed_at = token.get('liquidityAddedAt', 'N/A')
+                nachricht = f"🆕 **Neues Listing:**\n{name} ({symbol})\nDEX: {source}\nLiquidity: ${liquidity}\nGelisted am: {listed_at}"
                 sende_telegram_nachricht(nachricht)
 
         else:
@@ -41,4 +41,4 @@ while True:
     except Exception as e:
         sende_telegram_nachricht(f"Fehler: {e}")
 
-    time.sleep(900)  # alle 15 Minuten neue Listings checken
+    time.sleep(900)  # alle 15 Minuten checken
