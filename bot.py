@@ -4,11 +4,11 @@ import time
 # === Telegram Einstellungen ===
 BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
 CHAT_ID = '-1002397010517'
-
-# === CoinMarketCap API ===
 CMC_API_KEY = '99028e78-8d31-4988-82f6-7d625fcb7304'
 
-# === Telegram Funktion (mit Markdown Links) ===
+gepostete_tokens = set()  # Merkt sich bereits gepostete Token-Adressen
+
+# === Telegram Funktion (Markdown) ===
 def sende_telegram_nachricht(nachricht):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {
@@ -46,19 +46,22 @@ while True:
         response = requests.get("https://lite-api.jup.ag/tokens/v1/new", timeout=10)
         if response.status_code == 200:
             data = response.json()
-            tokens = data[:10]  # max 10 Tokens
+            tokens = data[:10]
 
             symbols = [token.get('symbol', '').upper() for token in tokens if token.get('symbol')]
             prices = get_cmc_prices(symbols)
 
             for token in tokens:
+                address = token.get('mint', '???')
+                if address in gepostete_tokens:
+                    continue  # Schon gepostet → skippen
+
                 created_at = token.get('created_at', 0)
                 if not ist_token_neu(created_at):
                     continue  # Zu alt → skippen
 
                 name = token.get('name', '???')
                 symbol = token.get('symbol', '???').upper()
-                address = token.get('mint', '???')
                 decimals = token.get('decimals', '???')
                 preis = prices.get(symbol)
 
@@ -75,10 +78,12 @@ while True:
                     f"[📈 Chart ansehen](https://birdeye.so/token/{address}?chain=solana)"
                 )
                 sende_telegram_nachricht(nachricht)
+
+                gepostete_tokens.add(address)  # Merken, damit es nicht nochmal gepostet wird
         else:
             sende_telegram_nachricht(f"Jupiter Fehler: HTTP {response.status_code}")
 
     except Exception as e:
         sende_telegram_nachricht(f"Fehler: {e}")
 
-    time.sleep(60)  # 15 Minuten Pause
+    time.sleep(900)  # 15 Minuten Pause
