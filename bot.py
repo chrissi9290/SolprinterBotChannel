@@ -5,42 +5,34 @@ BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
 CHAT_ID = '-1002397010517'
 BIRDEYE_API_KEY = '1c68ac943a2a423d91e73f1617b8ddf5'
 
-# Token Namen für die Adressen
-token_map = {
-    "So11111111111111111111111111111111111111112": "SOL",
-    "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263": "BONK"  # Beispiel-Token
-}
-
 def sende_telegram_nachricht(nachricht):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {'chat_id': CHAT_ID, 'text': nachricht}
     requests.post(url, data=payload)
 
-sende_telegram_nachricht("Birdeye Multi-Token Preis Bot gestartet!")
+sende_telegram_nachricht("Birdeye Top Tokens Bot gestartet!")
 
 while True:
     try:
-        url = "https://public-api.birdeye.so/defi/multi_price"
-        payload = { 
-            "list_address": ",".join(token_map.keys())
-        }
+        url = "https://public-api.birdeye.so/defi/tokenlist?sort_by=v24hUSD&sort_type=desc&offset=0&limit=10&min_liquidity=100"
         headers = {
             "accept": "application/json",
             "x-chain": "solana",
-            "content-type": "application/json",
             "X-API-KEY": BIRDEYE_API_KEY
         }
 
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
             data = response.json()
-            preise = data.get('data', {})
+            tokens = data.get('data', [])[:10]
 
-            nachricht = "🔥 Multi-Token Preise:\n"
-            for addr, info in preise.items():
-                name = token_map.get(addr, addr[:6])
-                price = round(float(info.get('value', 0)), 6)
-                nachricht += f"{name}: ${price}\n"
+            nachricht = "🔥 Top 10 Solana Tokens (24h Volumen):\n"
+            for i, token in enumerate(tokens, 1):
+                symbol = token.get('symbol', '???')
+                price = round(float(token.get('priceUsd', 0)), 6)
+                vol = round(float(token.get('v24hUSD', 0)), 2)
+                liquidity = round(float(token.get('liquidity', 0)), 2)
+                nachricht += f"{i}. {symbol} - ${price} | Vol: ${vol} | LQ: ${liquidity}\n"
 
             sende_telegram_nachricht(nachricht)
 
@@ -50,4 +42,4 @@ while True:
     except Exception as e:
         sende_telegram_nachricht(f"Fehler: {e}")
 
-    time.sleep(600)  # alle 10 Minuten
+    time.sleep(3600)  # alle 60 Minuten posten
