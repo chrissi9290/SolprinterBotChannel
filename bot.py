@@ -81,4 +81,4 @@ while True:
     except Exception as e:
         sende_telegram_nachricht(f"Fehler: {e}")
 
-    time.sleep(900)  # 15 Minuten Pause
+    time.sleep(60)  # 15 Minuten Pause
