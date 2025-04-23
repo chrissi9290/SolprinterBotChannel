@@ -1,3 +1,6 @@
+import requests
+import time
+
 # === Hauptloop mit Debug ===
 while True:
     try:
