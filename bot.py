@@ -1,5 +1,5 @@
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Telegram Bot Config
 BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
@@ -23,12 +23,12 @@ def filter_tokens(tokens):
         try:
             erstellt = datetime.utcfromtimestamp(int(token['created_at']))
             alter_minuten = int((jetzt - erstellt).total_seconds() / 60)
-            if alter_minuten <= 1440:  # 24h
+            if alter_minuten <= 120:  # Maximal 2 Stunden alt
                 token['alter_minuten'] = alter_minuten
                 gefiltert.append(token)
         except Exception as e:
             print(f"Fehler beim Filtern: {e}")
-    return gefiltert
+    return gefiltert[:5]  # Maximal 5 Tokens zurückgeben
 
 def sende_telegram_nachricht(nachricht):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
