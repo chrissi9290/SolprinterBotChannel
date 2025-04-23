@@ -1,13 +1,8 @@
 import requests
 
-url = "https://public-api.birdeye.so/defi/v2/tokens/new_listing?limit=1"
-headers = {
-    "accept": "application/json",
-    "x-chain": "solana",
-    "X-API-KEY": "bb5b2f48c9154f69a85c46fa08c83b38"
-}
+url = "https://token.jup.ag/new"
 
-response = requests.get(url, headers=headers)
+response = requests.get(url)
 
 print(response.status_code)
-print(response.text)
+print(response.json())
