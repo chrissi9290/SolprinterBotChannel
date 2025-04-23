@@ -1,7 +1,5 @@
 import requests
 from datetime import datetime, timedelta
-import time
-import json
 
 # Telegram Bot Config
 BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
@@ -24,8 +22,9 @@ def filter_tokens(tokens):
     for token in tokens:
         try:
             erstellt = datetime.utcfromtimestamp(int(token['created_at']))
-            differenz = jetzt - erstellt
-            if differenz <= timedelta(hours=24):  # Nur 24h Filter
+            alter_minuten = int((jetzt - erstellt).total_seconds() / 60)
+            if alter_minuten <= 1440:  # 24h
+                token['alter_minuten'] = alter_minuten
                 gefiltert.append(token)
         except Exception as e:
             print(f"Fehler beim Filtern: {e}")
@@ -42,13 +41,29 @@ def sende_telegram_nachricht(nachricht):
 def main():
     print("Hole neue Tokens...")
     tokens = hole_neue_tokens()
-    print(f"API Antwort: {tokens}")
-
     neue_tokens = filter_tokens(tokens)
     print(f"Gefundene neue Tokens: {len(neue_tokens)}")
 
     for token in neue_tokens:
-        nachricht = f"🆕 Neues Token auf Jupiter:\n*{token['name']}* ({token['symbol']})\nAddress: `{token['mint']}`\nDecimals: {token['decimals']}"
+        preis = token.get('price', 'n/a')
+        market_cap = token.get('market_cap', 'n/a')
+        liquidity = token.get('liquidity', 'n/a')
+        alter = token.get('alter_minuten', '?')
+        mint = token.get('mint', '?')
+        chart_link = f"https://birdeye.so/token/{mint}?chain=solana"
+        swap_link = f"https://jup.ag/swap/SOL-{mint}"
+
+        nachricht = (
+            f"🆕 Neues Token auf Jupiter:\n"
+            f"*{token['name']}* ({token['symbol']})\n"
+            f"Address: `{mint}`\n"
+            f"Decimals: {token['decimals']}\n"
+            f"Preis: ${preis}\n"
+            f"MarketCap: ${market_cap}\n"
+            f"Liquidity: ${liquidity}\n"
+            f"Alter: {alter} Min.\n"
+            f"[📈 Chart]({chart_link}) | [🔄 Swap]({swap_link})"
+        )
         sende_telegram_nachricht(nachricht)
 
 if __name__ == "__main__":
