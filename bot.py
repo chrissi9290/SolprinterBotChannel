@@ -48,8 +48,10 @@ def main():
 
     for token in neue_tokens:
         preis = round(float(token.get('price', 0)), 6)
-        market_cap = round(float(token.get('market_cap', 0)), 2)
-        liquidity = round(float(token.get('liquidity', 0)), 2)
+        market_cap = token.get('market_cap')
+        liquidity = token.get('liquidity')
+        market_cap_display = f"${round(float(market_cap), 2)}" if market_cap else "n/a"
+        liquidity_display = f"${round(float(liquidity), 2)}" if liquidity else "n/a"
         alter = token.get('alter_minuten', '?')
         mint = token.get('mint', '?')
         chart_link = f"https://birdeye.so/token/{mint}?chain=solana"
@@ -61,8 +63,8 @@ def main():
             f"Address: `{mint}`\n"
             f"Decimals: {token['decimals']}\n"
             f"Preis: ${preis}\n"
-            f"MarketCap: ${market_cap}\n"
-            f"Liquidity: ${liquidity}\n"
+            f"MarketCap: {market_cap_display}\n"
+            f"Liquidity: {liquidity_display}\n"
             f"Alter: {alter} Min.\n"
             f"[📈 Chart]({chart_link}) | [🔄 Swap]({swap_link})"
         )
