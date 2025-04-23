@@ -1,7 +1,6 @@
 import requests
 import time
 
-# === Telegram Settings ===
 BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
 CHAT_ID = '-1002397010517'
 CMC_API_KEY = '99028e78-8d31-4988-82f6-7d625fcb7304'
@@ -10,7 +9,8 @@ def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {'chat_id': CHAT_ID, 'text': message, 'parse_mode': 'Markdown'}
     try:
-        requests.post(url, data=payload, timeout=10)
+        response = requests.post(url, data=payload, timeout=10)
+        print(f"Telegram Response: {response.status_code}")
     except Exception as e:
         print(f"Telegram Error: {e}")
 
@@ -22,6 +22,7 @@ def get_cmc_prices(symbols):
     headers = {'Accepts': 'application/json', 'X-CMC_PRO_API_KEY': CMC_API_KEY}
     try:
         response = requests.get(url, headers=headers, params=parameters, timeout=10)
+        print(f"CMC Response: {response.status_code}")
         data = response.json().get('data', {})
         return {symbol: round(data[symbol]['quote']['USD']['price'], 6) for symbol in data}
     except Exception as e:
@@ -36,12 +37,15 @@ def is_token_new(created_at_timestamp, limit_minutes=60):
 while True:
     try:
         response = requests.get("https://lite-api.jup.ag/tokens/v1/new", timeout=10)
+        print(f"Jupiter API Status: {response.status_code}")
         if response.status_code == 200:
             data = response.json()
+            print(f"Found {len(data)} tokens")
             tokens = data[:10]
 
             symbols = [token.get('symbol', '').upper() for token in tokens if token.get('symbol')]
             prices = get_cmc_prices(symbols)
+            print(f"Loaded Prices: {prices}")
 
             for token in tokens:
                 address = token.get('mint', '???')
@@ -52,9 +56,11 @@ while True:
                 price = prices.get(symbol)
 
                 if not is_token_new(created_at):
-                    continue  # Too old → skip
+                    print(f"{symbol} is too old.")
+                    continue
                 if price is None or price == 'n/a':
-                    continue  # No price → skip
+                    print(f"{symbol} has no price.")
+                    continue
 
                 message = (
                     f"🆕 *New Token Listed on Jupiter:*\n"
