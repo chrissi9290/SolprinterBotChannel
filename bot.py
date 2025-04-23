@@ -30,7 +30,8 @@ def main():
         gefilterte_tokens = []
 
         for token in tokens_data:
-            created_at = datetime.utcfromtimestamp(token['created_at'])
+            created_at_ts = int(token.get('created_at', 0))
+            created_at = datetime.utcfromtimestamp(created_at_ts)
             alter = (now - created_at).total_seconds() / 60  # Alter in Minuten
 
             if alter <= 120:  # Nur Tokens max. 2 Stunden alt
@@ -48,7 +49,7 @@ def main():
             mint = token['mint']
             name = token['name']
             symbol = token['symbol']
-            decimals = token['decimals']
+            decimals = int(token.get('decimals', 0))
             preis_info = preise_data.get(mint)
 
             if not preis_info:
@@ -59,7 +60,7 @@ def main():
             if preis <= 0 or liquiditaet < 1000:
                 continue
 
-            alter_minuten = int((now - datetime.utcfromtimestamp(token['created_at'])).total_seconds() / 60)
+            alter_minuten = int((now - datetime.utcfromtimestamp(int(token['created_at']))).total_seconds() / 60)
             chart_link = f"https://dexscreener.com/solana/{mint}"
             swap_link = f"https://jup.ag/swap?outputCurrency={mint}"
 
