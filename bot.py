@@ -1,11 +1,13 @@
 import requests
 import time
 
+# === Telegram Einstellungen ===
 BOT_TOKEN = '7903108939:AAFqZR12Sa8MuL14zgmmRMwsU7FEgQXycjE'
 CHAT_ID = '-1002397010517'
 CMC_API_KEY = '99028e78-8d31-4988-82f6-7d625fcb7304'
 
 gepostete_tokens = set()
+erste_runde = True  # Alle Tokens einmal posten
 
 def sende_telegram_nachricht(nachricht):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -39,32 +41,27 @@ while True:
         response = requests.get("https://lite-api.jup.ag/tokens/v1/new", timeout=10)
         if response.status_code == 200:
             data = response.json()
-            print(f"Gefundene Tokens: {len(data)}")
             tokens = data[:10]
 
             symbols = [token.get('symbol', '').upper() for token in tokens if token.get('symbol')]
             prices = get_cmc_prices(symbols)
-            print(f"CMC Preise geladen: {prices}")
 
             for token in tokens:
                 address = token.get('mint', '???')
-                if address in gepostete_tokens:
-                    print(f"Bereits gepostet: {address}")
-                    continue
-
                 created_at = token.get('created_at', 0)
-                if not ist_token_neu(created_at):
-                    print(f"Zu alt: {token.get('name')} ({address})")
-                    continue
-
                 name = token.get('name', '???')
                 symbol = token.get('symbol', '???').upper()
                 decimals = token.get('decimals', '???')
                 preis = prices.get(symbol)
 
+                if not ist_token_neu(created_at):
+                    continue  # Zu alt → skippen
+
                 if preis is None or preis == 'n/a':
-                    print(f"Kein Preis für {symbol}")
-                    continue
+                    continue  # Kein Preis → skippen
+
+                if not erste_runde and address in gepostete_tokens:
+                    continue  # Bereits gepostet → skippen
 
                 nachricht = (
                     f"🆕 *Frisch gelistet auf Jupiter:*\n"
@@ -77,10 +74,15 @@ while True:
                 )
                 sende_telegram_nachricht(nachricht)
                 gepostete_tokens.add(address)
+
+            if erste_runde:
+                print("Einmaliger Full-Post abgeschlossen!")
+                erste_runde = False  # Ab jetzt nur noch neue Tokens
+
         else:
             sende_telegram_nachricht(f"Jupiter Fehler: HTTP {response.status_code}")
 
     except Exception as e:
         sende_telegram_nachricht(f"Fehler: {e}")
 
-    time.sleep(60)  # 15 Minuten
+    time.sleep(900)  # 15 Minuten Pause
